@@ -1,0 +1,54 @@
+{
+    "manifest_version": 3,
+    "name": "WASP-Guard (WASM)",
+    "version": "1.0.0",
+    "description": "Advanced client-side spam detection using Python and WebAssembly.",
+    "permissions": [
+        "scripting",
+        "activeTab",
+        "offscreen",
+        "storage",
+        "notifications"
+    ],
+    "host_permissions": [
+        "https://mail.google.com/*"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://mail.google.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "css": [
+                "styles.css"
+            ],
+            "run_at": "document_end"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "python/spam_engine.py",
+                "styles.css",
+                "offscreen.html",
+                "lib/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+    },
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    }
+}

@@ -1,0 +1,104 @@
+/* Premium Modern CSS for Spam Banner */
+.wg-banner {
+    width: 95%;
+    margin: 10px auto;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    animation: wg-slide-down 0.4s ease-out;
+    z-index: 9999;
+    position: relative;
+    border-left: 6px solid transparent;
+}
+
+.wg-danger {
+    background: #fff5f5;
+    border-color: #e53e3e;
+    color: #c53030;
+    border: 1px solid #fc8181;
+    border-left-width: 6px;
+}
+
+.wg-safe {
+    background: #f0fff4;
+    border-color: #38a169;
+    color: #2f855a;
+    border: 1px solid #68d391;
+    border-left-width: 6px;
+}
+
+.wg-scanning {
+    background: #fffff0;
+    border-color: #d69e2e;
+    color: #744210;
+    border: 1px solid #fbd38d;
+    border-left-width: 6px;
+}
+
+.wg-banner-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.wg-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.wg-text {
+    flex: 1;
+}
+
+.wg-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.wg-text strong {
+    font-size: 16px;
+}
+
+.wg-score {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.wg-explanation {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.wg-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    padding: 0 4px;
+}
+
+.wg-close:hover {
+    opacity: 1;
+}
+
+@keyframes wg-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
