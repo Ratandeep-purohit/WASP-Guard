@@ -88,4 +88,4 @@ Most browser extensions are simple wrappers around API calls. This project imple
 - **Phishing URL Database**: Bundle a Bloom Filter of known malicious URLs for O(1) lookups.
 
 ---
-*Engineered by WASP-Guard Team*
+*Engineered by Ratandeep Purohit*

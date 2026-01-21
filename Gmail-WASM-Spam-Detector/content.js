@@ -3,8 +3,9 @@
 // Utility to create the warning banner
 function createWarningBanner(result) {
     // Remove existing banners if any
-    const existing = document.getElementById('wasp-guard-start-scan-banner');
-    if (existing) existing.remove();
+    // Remove ALL existing banners to prevent duplicates/stacking
+    const allExisting = document.querySelectorAll('.wg-banner');
+    allExisting.forEach(b => b.remove());
 
     const banner = document.createElement('div');
     // Set ID for the scanning banner so we can remove it later
@@ -15,6 +16,7 @@ function createWarningBanner(result) {
     // Determine style class
     let styleClass = 'wg-safe';
     if (result.is_spam || (result.explanation && result.explanation.startsWith('Connection Failed'))) styleClass = 'wg-danger';
+    if (result.explanation === "Extension updated. Please REFRESH this page to continue.") styleClass = 'wg-danger';
     if (result.explanation === "Running local Python analysis...") styleClass = 'wg-scanning';
 
     banner.className = `wg-banner ${styleClass}`;
@@ -30,6 +32,11 @@ function createWarningBanner(result) {
     if (result.explanation && result.explanation.startsWith('Connection Failed')) {
         icon = '❌';
         title = 'Analysis Failed';
+    }
+
+    if (result.explanation === "Extension updated. Please REFRESH this page to continue.") {
+        icon = '🔄';
+        title = 'Extension Updated';
     }
 
     banner.innerHTML = `
@@ -143,55 +150,88 @@ async function runAnalysis() {
     }, 12000);
 
     // 2. Send to background -> offscreen(python)
-    chrome.runtime.sendMessage({
-        action: 'check_spam',
-        data: data
-    }, (response) => {
-        // Clear timers
-        clearTimeout(timer1);
-        clearTimeout(timer2);
+    // Wrap in try-catch to handle synchronous connection errors (like context invalidated)
+    try {
+        chrome.runtime.sendMessage({
+            action: 'check_spam',
+            data: data
+        }, (response) => {
+            // Check if the context was invalidated during the request or other runtime errors
+            if (chrome.runtime.lastError) {
+                const msg = chrome.runtime.lastError.message;
+                console.warn("WASP-Guard Runtime Warning:", msg);
 
-        // Remove scanning banner
-        const existingScan = document.getElementById('wasp-guard-start-scan-banner');
-        if (existingScan) existingScan.remove();
+                if (msg.includes("Extension context invalidated")) {
+                    console.log("WASP-Guard: Context invalidated. User needs to reload.");
+                    showReloadBanner();
+                    return;
+                }
 
-        // Check for runtime errors
-        if (chrome.runtime.lastError) {
-            console.error("WASP-Guard Runtime Error:", chrome.runtime.lastError);
-            const errorBanner = createWarningBanner({
-                is_spam: false,
-                confidence_score: 0,
-                explanation: `Connection Failed: ${chrome.runtime.lastError.message}. Reload page.`
-            });
-            injectBanner(errorBanner);
-            return;
-        }
-
-        if (response) {
-            console.log("WASP-Guard Result:", response);
-            // Handle generic error response from background
-            if (response.explanation && response.explanation.startsWith("Analysis Failed")) {
+                // Generic connection failure handling
                 const errorBanner = createWarningBanner({
                     is_spam: false,
                     confidence_score: 0,
-                    explanation: response.explanation
+                    explanation: `Connection Failed: ${msg}. Reload page.`
                 });
-                errorBanner.classList.add('wg-danger');
                 injectBanner(errorBanner);
                 return;
             }
 
-            if (response.is_spam) {
-                const banner = createWarningBanner(response);
-                injectBanner(banner);
-            } else {
-                // User requested banner in ALL conditions, including safe
-                const banner = createWarningBanner(response);
-                injectBanner(banner);
-                console.log("WASP-Guard: Email safe, showing green banner.");
+            // Clear timers
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+
+            // Remove scanning banner
+            const existingScan = document.getElementById('wasp-guard-start-scan-banner');
+            if (existingScan) existingScan.remove();
+
+            if (response) {
+                console.log("WASP-Guard Result:", response);
+                // Handle generic error response from background
+                if (response.explanation && response.explanation.startsWith("Analysis Failed")) {
+                    const errorBanner = createWarningBanner({
+                        is_spam: false,
+                        confidence_score: 0,
+                        explanation: response.explanation
+                    });
+                    errorBanner.classList.add('wg-danger');
+                    injectBanner(errorBanner);
+                    return;
+                }
+
+                if (response.is_spam) {
+                    const banner = createWarningBanner(response);
+                    injectBanner(banner);
+                } else {
+                    // User requested banner in ALL conditions, including safe
+                    const banner = createWarningBanner(response);
+                    injectBanner(banner);
+                    console.log("WASP-Guard: Email safe, showing green banner.");
+                }
             }
-        }
+        });
+    } catch (err) {
+        // This catches the synchronous "Extension context invalidated" error if it throws immediately
+        console.error("WASP-Guard: Extension Context Invalidated (Try Block)", err);
+        showReloadBanner();
+    }
+}
+
+function showReloadBanner() {
+    const existing = document.getElementById('wasp-guard-start-scan-banner');
+    if (existing) existing.remove();
+
+    // Don't show if already shown
+    const existingReload = document.querySelector('.wg-banner .wg-icon:contains("🔄")');
+    if (existingReload) return;
+
+    const banner = createWarningBanner({
+        is_spam: false,
+        confidence_score: 0,
+        explanation: "Extension updated. Please REFRESH this page to continue."
     });
+    // Add logic to banner creation to handle this specific message or simpler override
+    injectBanner(banner);
 }
 
 console.log("WASP-Guard Extension Loaded");
